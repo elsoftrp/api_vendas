@@ -16,7 +16,7 @@ class CreateEmpresa extends Migration
         Schema::create('empresas', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
-            $table->string('cnpjcpf')->unique();
+            $table->string('cnpjcpf',50)->unique();
             $table->string('insrg')->nullable();
             $table->string('insmunicipal')->nullable();
             /** address */
@@ -25,7 +25,7 @@ class CreateEmpresa extends Migration
             $table->string('numero')->nullable();
             $table->string('complemento')->nullable();
             $table->string('bairro')->nullable();
-            $table->unsignedInteger('cidade_id');
+            $table->unsignedBigInteger('cidade_id');
 
             /** contact */
             $table->string('telefone')->nullable();

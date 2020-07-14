@@ -15,9 +15,9 @@ class CreatePessoa extends Migration
     {
         Schema::create('pessoas', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('empresa_id');
+            $table->unsignedBigInteger('empresa_id');
             $table->string('nome');
-            $table->string('cnpjcpf')->unique();
+            $table->string('cnpjcpf',50)->unique();
             $table->string('insrg')->nullable();
             $table->string('insmunicipal')->nullable();
             $table->string('razaosocial')->nullable();
@@ -34,7 +34,7 @@ class CreatePessoa extends Migration
             $table->string('numero')->nullable();
             $table->string('complemento')->nullable();
             $table->string('bairro')->nullable();
-            $table->unsignedInteger('cidade_id');
+            $table->unsignedBigInteger('cidade_id');
 
             $table->boolean('inativo')->nullable();
             $table->dateTime('inativodt')->nullable();

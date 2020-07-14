@@ -66,21 +66,20 @@ class LoginController extends Controller
         }
     }
 
-    public function store(UserRequest $request, User $userCreate)
+    public function store(UserRequest $request)
     {
         $direitos = $this->model->permissao($request, $this->nomeprograma);
         if ($direitos && $direitos->btnincluir)
         {
-            $resultado = DB::transaction(function() use ($request, $userCreate) {
-                $userCreate->create([
-                    'name' => $request['name'],
-                    'email' => $request['email'],
-                    'password' => bcrypt($request['password']),
-                    'darkmode' => $request['darkmode'],
-                    'cidade_id' => $request['cidade_id'],
-                    'empresa_id' => $request['empresa_id']
-                ]);
-                if ($userCreate)
+            $resultado = DB::transaction(function() use ($request) {
+                $userCreate = new User;
+                $userCreate->fill($request->all());
+                $userCreate->password = bcrypt($request['password']);
+                if (!empty($request->empresa))
+                    $userCreate->empresa_id = (int) $request->empresa['id'];
+                if (!empty($request->cidade))
+                    $userCreate->cidade_id = (int) $request->cidade['id'];
+                if ($userCreate->save())
                 {
                     $this->model->log($request, $this->nomeprograma, 'INCLUIR', $userCreate->id);
                     return $userCreate->id;
@@ -98,7 +97,7 @@ class LoginController extends Controller
         $direitos = $this->model->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
-            $entity     = User::where('id',$id)->first();
+            $entity  = User::where('id',$id)->with('cidade')->with('empresa')->get()->first();
             return response()->json($entity);
         }
         else
@@ -114,13 +113,11 @@ class LoginController extends Controller
         {
             $resultado = DB::transaction(function () use ($id, $request) {
                 $entity = User::where('id', $id)->first();
-                $entity->fill([
-                    'name' => $request['name'],
-                    'email' => $request['email'],
-                    'darkmode' => $request['darkmode'],
-                    'cidade_id' => $request['cidade_id'],
-                    'empresa_id' => $request['empresa_id']
-                    ]);
+                $entity->fill($request->except('password'));
+                if (!empty($request->empresa))
+                    $entity->empresa_id = (int) $request->empresa['id'];
+                if (!empty($request->cidade))
+                    $entity->cidade_id = (int) $request->cidade['id'];
                 if ($entity->save())
                 {
                     $this->model->log($request, $this->nomeprograma, 'ALTERAR', $id);

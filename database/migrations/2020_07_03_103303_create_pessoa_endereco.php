@@ -15,7 +15,7 @@ class CreatePessoaEndereco extends Migration
     {
         Schema::create('pessoa_enderecos', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('pessoa_id');
+            $table->unsignedBigInteger('pessoa_id');
             $table->string('descricao')->nullable();
             $table->boolean('principal')->nullable();
             $table->boolean('inativo')->nullable()->default(false);
@@ -26,7 +26,7 @@ class CreatePessoaEndereco extends Migration
             $table->string('numero')->nullable();
             $table->string('complemento')->nullable();
             $table->string('bairro')->nullable();
-            $table->unsignedInteger('cidade_id');
+            $table->unsignedBigInteger('cidade_id');
 
             $table->timestamps();
             $table->foreign('cidade_id')->references('id')->on('cidades');

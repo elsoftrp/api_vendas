@@ -123,9 +123,9 @@ class ProdutoController extends Controller
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
-            $valorPesquisa = $request->descricao;
+            $valorPesquisa = $request->campo;
             $data = DB::table('produtos')->select(DB::raw("id, despro, ean"))
-            ->where('descricao','=', $valorPesquisa)
+            ->where('despro','=', $valorPesquisa)
             ->orWhere('ean','=',$valorPesquisa)
             ->limit(10)
             ->get();

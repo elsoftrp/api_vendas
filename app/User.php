@@ -3,6 +3,7 @@
 namespace App;
 
 use App\Model\Cidade;
+use App\Model\Empresa;
 use App\Model\ProgramasUsuario;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -97,8 +98,8 @@ class User extends Authenticatable
                 $query->where('users.name','LIKE', $pesquisa.'%')
                 ->orWhere('users.email','LIKE','%'.$pesquisa.'%');
             }
-        })
-        ->select('users.id','users.name','users.email')
+        })->leftJoin('empresas', 'empresas.id','=','users.empresa_id')
+        ->select('users.id','users.name','users.email','empresas.nome')
         ->orderBy($orderBy, $direct)
         ->paginate(10);
         return $results;
@@ -109,6 +110,7 @@ class User extends Authenticatable
         $fields = array('id' => 'id'
             ,'name'      => 'name'
             ,'email'     => 'email'
+            ,'nome'     => 'empresas.nome'
         );
         if (!empty($fields[$value]))
             return $fields[$value];

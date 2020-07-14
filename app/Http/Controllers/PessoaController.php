@@ -138,7 +138,7 @@ class PessoaController extends Controller
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
-            $valorPesquisa = $request->cnpj;
+            $valorPesquisa = $request->cnpjcpf;
             $data = DB::table('pessoas')->select(DB::raw("id, nome, cnpjcpf"))
             ->where('cnpjcpf','=', $valorPesquisa)
             ->limit(10)

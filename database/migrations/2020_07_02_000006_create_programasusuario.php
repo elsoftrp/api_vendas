@@ -15,8 +15,8 @@ class CreateProgramasusuario extends Migration
     {
         Schema::create('programasusuario', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('user_id');
-            $table->unsignedInteger('programa_id');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('programa_id');
             $table->boolean('btnincluir')->nullable();
             $table->boolean('btnalterar')->nullable();
             $table->boolean('btnvisualizar')->nullable();

@@ -15,9 +15,9 @@ class CreateProduto extends Migration
     {
         Schema::create('produtos', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('empresa_id');
-            $table->unsignedInteger('grupo_id');
-            $table->string('ean')->unique();
+            $table->unsignedBigInteger('empresa_id');
+            $table->unsignedBigInteger('grupo_id');
+            $table->string('ean',50)->unique();
             $table->string('despro');
             $table->double('prcompra')->nullable();
             $table->double('vracrescimo')->nullable();
