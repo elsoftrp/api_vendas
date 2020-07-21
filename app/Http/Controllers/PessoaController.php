@@ -33,8 +33,8 @@ class PessoaController extends Controller
             if ($request->has('order')) $order = $request->query('order');
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
-            $empresas = $this->model->busca($pesquisa, $order, $direct);
-            return response()->json($empresas);
+            $resultado = $this->model->busca($pesquisa, $order, $direct, $request->user()->empresa_id);
+            return response()->json($resultado);
         }
         else
         {
@@ -128,6 +128,27 @@ class PessoaController extends Controller
             });
             return $resultado;
         } else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos && $direitos->btnexcluir)
+        {
+            $resultado = DB::transaction(function () use ($id, $request) {
+                $data = $this->model->where('id',$id)->first();
+                if ($data->delete())
+                {
+                    $this->user->log($request, $this->nomeprograma, 'EXCLUIR', $id);
+                    return $data;
+                }
+            });
+            return $resultado;
+        }
+        else
         {
             return response()->json(['sem permissão'], 403);
         }

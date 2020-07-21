@@ -32,11 +32,11 @@ class Pessoa extends Model
         'empresa_id'
     ];
 
-    public function busca($pesquisa = null, $order = null, $direct = 'asc')
+    public function busca($pesquisa = null, $order = null, $direct = 'asc', $idEmpresa = null)
     {
 
         $orderBy = $this->fieldOrder($order);
-        $results = $this->where(function ($query) use ($pesquisa)
+        $results = $this->where(function ($query) use ($pesquisa, $idEmpresa)
         {
             if ($pesquisa)
             {
@@ -46,6 +46,7 @@ class Pessoa extends Model
             {
                 $query->where('pessoas.inativo',false);
             }
+            if ($idEmpresa) $query->where('pessoas.empresa_id', $idEmpresa);
         })->leftJoin('cidades', 'cidades.id','=','pessoas.cidade_id')
         ->select('pessoas.id', 'pessoas.nome','pessoas.cnpjcpf','pessoas.email','pessoas.telefone','pessoas.celular','pessoas.inativo','cidades.cidade')
         ->orderBy($orderBy, $direct)
@@ -108,6 +109,20 @@ class Pessoa extends Model
             return date('d/m/Y', strtotime($value));
         }
         else return null;
+    }
+
+    public function setInativoAttribute($value)
+    {
+        $this->attributes['inativo'] = ($value === true || $value === 'on' || $value === 'true' ? 1 : 0);
+    }
+
+    public function getInativoAttribute($value)
+    {
+        if ($value == 1 || $value === true)
+        {
+            return true;
+        }
+        else return false;
     }
 
     public function setCnpjcpfAttribute($value)

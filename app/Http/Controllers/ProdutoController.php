@@ -118,6 +118,27 @@ class ProdutoController extends Controller
         }
     }
 
+    public function destroy(Request $request, $id)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos && $direitos->btnexcluir)
+        {
+            $resultado = DB::transaction(function () use ($id, $request) {
+                $data = $this->model->where('id',$id)->first();
+                if ($data->delete())
+                {
+                    $this->user->log($request, $this->nomeprograma, 'EXCLUIR', $id);
+                    return $data;
+                }
+            });
+            return $resultado;
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
     public function seek(Request $request)
     {
         $direitos = $this->user->permissao($request, $this->nomeprograma);

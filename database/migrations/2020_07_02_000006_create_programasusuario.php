@@ -27,8 +27,8 @@ class CreateProgramasusuario extends Migration
             $table->boolean('btnchave3')->nullable();
             $table->boolean('btnchave4')->nullable();
             $table->timestamps();
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->foreign('programa_id')->references('id')->on('programas');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('CASCADE');
+            $table->foreign('programa_id')->references('id')->on('programas')->onDelete('CASCADE');
         });
     }
 
