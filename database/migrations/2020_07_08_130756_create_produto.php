@@ -17,11 +17,11 @@ class CreateProduto extends Migration
             $table->id();
             $table->unsignedBigInteger('empresa_id');
             $table->unsignedBigInteger('grupo_id');
-            $table->string('ean',50)->unique();
+            //$table->string('ean',50)->unique();
             $table->string('despro');
-            $table->double('prcompra')->nullable();
-            $table->double('vracrescimo')->nullable();
-            $table->double('prcustof')->nullable();
+            //$table->double('prcompra')->nullable();
+            //$table->double('vracrescimo')->nullable();
+            $table->double('prcusto')->nullable();
             $table->double('plucro')->nullable();
             $table->double('prvenda')->nullable();
             $table->double('estoquep')->nullable();

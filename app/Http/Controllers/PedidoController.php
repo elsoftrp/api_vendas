@@ -26,7 +26,7 @@ class PedidoController extends Controller
     public function index(Request $request)
     {
         $order = null;
-        $direct = 'asc';
+        $direct = 'desc';
         $pesquisa = null;
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
@@ -71,7 +71,7 @@ class PedidoController extends Controller
                         $produto = Produto::where('id',$idProd)->first();
                         $item['empresa_id'] = $usuario->empresa_id;
                         $item['produto_id'] = $produto->id;
-                        $item['prcusto'] = $produto->prcustof;
+                        $item['prcusto'] = $produto->prcusto;
                         $pedidoCreate->pedidoItem()->create($item);
                     }
                     $this->user->log($request, $this->nomeprograma, 'INCLUIR', $pedidoCreate->id);
@@ -204,23 +204,22 @@ class PedidoController extends Controller
     public function buscaCliente(Request $request)
     {
         $valorPesquisa = $request->pesquisa;
-        $pessoas = DB::table('pessoas')->select(DB::raw('id, nome, cnpjcpf'))
-        ->where('nome','LIKE', $valorPesquisa.'%')
+        $resultado = DB::table('pessoas')->select(DB::raw('id, nome, cnpjcpf'))
+        ->where('nome','LIKE', '%'.$valorPesquisa.'%')
         ->orWhere('cnpjcpf','LIKE', $valorPesquisa.'%')
         ->limit(10)
         ->get();
-        return $pessoas;
+        return $resultado;
     }
 
     public function buscaProduto(Request $request)
     {
         $valorPesquisa = $request->pesquisa;
-        $pessoas = DB::table('produtos')->select(DB::raw('id, despro, prvenda'))
-        ->where('despro','LIKE', $valorPesquisa.'%')
-        ->orWhere('ean','LIKE', $valorPesquisa.'%')
+        $resultado = DB::table('produtos')->select(DB::raw('id, despro, prvenda'))
+        ->where('despro','LIKE', '%'.$valorPesquisa.'%')
         ->limit(10)
         ->get();
-        return $pessoas;
+        return $resultado;
     }
 
     public function buscaVendas(Request $request, $id)
@@ -228,7 +227,11 @@ class PedidoController extends Controller
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
-            $data = $this->model->where('pessoa_id',$id)->select('id','pedidodt','totpedido')->orderBy('pedidodt','desc')->get();
+            $data = $this->model->where('pessoa_id',$id)
+                ->whereNull('cancelado')
+                ->select('id','pedidodt','totpedido')
+                ->orderBy('pedidodt','desc')
+                ->get();
             return response()->json($data);
         }
         else
@@ -244,7 +247,8 @@ class PedidoController extends Controller
         {
             $data = PedidoItem::where('pedido_id',$id)
                 ->leftJoin('produtos', 'produtos.id','=','pedido_items.produto_id')
-                ->select('produtos.id','produtos.despro','pedido_items.prvenda','pedido_items.quantidade','pedido_items.prtotal')->get();
+                ->select('produtos.id','produtos.despro','pedido_items.prvenda','pedido_items.quantidade','pedido_items.prtotal')
+                ->get();
             return response()->json($data);
         }
         else

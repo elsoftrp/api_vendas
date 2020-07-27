@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PessoaRequest;
+use App\Http\Resources\PessoaResource;
 use App\Model\Pessoa;
-use App\Model\PessoaEnderecos;
-use App\Model\PessoaTpPessoa;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -147,6 +146,20 @@ class PessoaController extends Controller
                 }
             });
             return $resultado;
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
+    public function lista(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos)
+        {
+            $data = $this->model->all();
+            return PessoaResource::collection($data); //response()->json($data);
         }
         else
         {

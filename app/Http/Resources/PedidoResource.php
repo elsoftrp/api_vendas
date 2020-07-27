@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Model\PedidoItem;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class PedidoResource extends JsonResource

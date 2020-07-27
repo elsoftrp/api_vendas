@@ -44,6 +44,7 @@ class Pedido extends Model
                 $query->where('pessoas.inativo',false);
             }
             if ($idEmpresa) $query->where('pessoas.empresa_id', $idEmpresa);
+            $query->whereNull('pedidos.cancelado');
         })->leftJoin('pessoas', 'pessoas.id','=','pedidos.pessoa_id')
         ->select('pedidos.id', 'pedidos.pedidodt','pessoas.nome','pessoas.cnpjcpf','pedidos.totpedido')
         ->orderBy($orderBy, $direct)
@@ -62,7 +63,7 @@ class Pedido extends Model
         if (!empty($fields[$value]))
             return $fields[$value];
         else
-            return $fields['nome'];
+            return $fields['pedidodt'];
     }
 
     public function pedidoItem()
@@ -112,10 +113,6 @@ class Pedido extends Model
         else return null;
     }
 
-    public function setCanceladodtAttribute($value)
-    {
-        $this->attributes['canceladodt'] = $this->convertStringToDate($value);
-    }
 
     public function getCanceladodtAttribute($value)
     {

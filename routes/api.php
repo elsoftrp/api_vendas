@@ -45,8 +45,10 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::resource('pessoastp', 'PessoaTpController');
     Route::post('pessoastp/seek','PessoaTpController@seek');
 
+    Route::get('pessoas/lista','PessoaController@lista');
     Route::resource('pessoas', 'PessoaController');
     Route::post('pessoas/seek','PessoaController@seek');
+
 
     Route::resource('grupos', 'GrupoController');
     Route::post('grupos/seek','GrupoController@seek');
@@ -62,6 +64,7 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::post('pedidos/cliente','PedidoController@buscaCliente');
     Route::post('pedidos/produto','PedidoController@buscaProduto');
 
+    Route::resource('pagtotp', 'PagtoTpController');
 
 
 });
