@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PessoaRequest;
+use App\Http\Resources\PessoaColletion;
 use App\Http\Resources\PessoaResource;
 use App\Model\Pessoa;
 use App\User;
@@ -33,7 +34,8 @@ class PessoaController extends Controller
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
             $resultado = $this->model->busca($pesquisa, $order, $direct, $request->user()->empresa_id);
-            return response()->json($resultado);
+            return PessoaColletion::collection($resultado);
+            //return response()->json($resultado);
         }
         else
         {

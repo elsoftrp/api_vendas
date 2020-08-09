@@ -15,7 +15,7 @@ class CreatePagtoTpsTable extends Migration
     {
         Schema::create('pagto_tp', function (Blueprint $table) {
             $table->id();
-            $table->string('despagto',30);
+            $table->string('despagtotp',30);
             $table->timestamps();
         });
     }

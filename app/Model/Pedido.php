@@ -17,12 +17,11 @@ class Pedido extends Model
         'devolucao',
         'total',
         'totpedido',
-        'dinheiro',
-        'troco',
-        'fiado',
-        'cartaodebito',
-        'cartaocredito',
-        'boleto',
+        'tp_pagto',
+        'parcelas',
+        'dias_pri',
+        'dias_prox',
+        'pagto_tp_id',
         'baixado',
         'baixadodt',
         'cancelado',
@@ -46,7 +45,7 @@ class Pedido extends Model
             if ($idEmpresa) $query->where('pessoas.empresa_id', $idEmpresa);
             $query->whereNull('pedidos.cancelado');
         })->leftJoin('pessoas', 'pessoas.id','=','pedidos.pessoa_id')
-        ->select('pedidos.id', 'pedidos.pedidodt','pessoas.nome','pessoas.cnpjcpf','pedidos.totpedido')
+        ->select('pedidos.id', 'pedidos.pedidodt','pedidos.pessoa_id','pessoas.nome','pessoas.cnpjcpf','pedidos.totpedido')
         ->orderBy($orderBy, $direct)
         ->paginate(10);
         return $results;
@@ -74,6 +73,11 @@ class Pedido extends Model
     public function pessoa()
     {
         return $this->hasOne(Pessoa::class, 'id','pessoa_id');
+    }
+
+    public function pagtoTp()
+    {
+        return $this->hasOne(PagtoTp::class, 'id','pagto_tp_id');
     }
 
     public function getCreatedAtAttribute($value)
@@ -121,6 +125,21 @@ class Pedido extends Model
             return date('d/m/Y', strtotime($value));
         }
         else return null;
+    }
+
+    public function getCnpjcpfAttribute($value)
+    {
+        if (strlen($value)===11)
+        {
+            return substr($value, 0, 3) . '.' . substr($value, 3, 3) . '.' . substr($value, 6, 3) . '-' . substr($value, 9, 2);
+        } else if (strlen($value)==14)
+        {
+            return substr($value, 0, 2) . '.' . substr($value, 2, 3) . '.' . substr($value, 5, 3) .
+            '/' . substr($value, 8, 4) . '-' . substr($value, 12, 2);
+        } else
+        {
+            return $value;
+        }
     }
 
     private function convertStringToDate(?string $param)

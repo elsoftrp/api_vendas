@@ -66,5 +66,16 @@ Route::group(['middleware' => ['auth:sanctum']], function()
 
     Route::resource('pagtotp', 'PagtoTpController');
 
+    Route::resource('planoconta', 'PlanoContaController');
+    Route::post('planoconta/planopai','PlanoContaController@buscaPlano');
+
+    Route::resource('financeiro', 'FinanceiroController');
+    Route::get('financeiro/pessoa/{id}','FinanceiroController@buscaFinanceiro');
+    Route::post('financeiro/planoconta','FinanceiroController@buscaPlano');
+    Route::delete('financeiro/estorno/{id}','FinanceiroController@estorno');
+
+    Route::resource('financeiroitem', 'FinanceiroItemController');
+
+
 
 });

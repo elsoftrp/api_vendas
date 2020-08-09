@@ -47,8 +47,12 @@ class Pessoa extends Model
                 $query->where('pessoas.inativo',false);
             }
             if ($idEmpresa) $query->where('pessoas.empresa_id', $idEmpresa);
-        })->leftJoin('cidades', 'cidades.id','=','pessoas.cidade_id')
-        ->select('pessoas.id', 'pessoas.nome','pessoas.cnpjcpf','pessoas.email','pessoas.telefone','pessoas.celular','pessoas.inativo','cidades.cidade')
+        })//->leftJoin('cidades', 'cidades.id','=','pessoas.cidade_id')
+        //->leftJoin('pessoa_tp_pessoa','pessoa_tp_pessoa.pessoa_id','=','pessoas.id')
+        //->leftJoin('pessoa_tp','pessoa_tp.id','=','pessoa_tp_pessoa.pessoa_tp_id')
+        //->select('pessoas.id', 'pessoas.nome','pessoas.cnpjcpf','pessoas.email'
+        //        ,'pessoas.telefone','pessoas.celular','pessoas.inativo','cidades.cidade')
+        ->with('pessoaTp')
         ->orderBy($orderBy, $direct)
         ->paginate(10);
         return $results;

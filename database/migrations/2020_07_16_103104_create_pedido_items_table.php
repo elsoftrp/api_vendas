@@ -26,7 +26,7 @@ class CreatePedidoItemsTable extends Migration
             $table->double('prtotal');
 
             $table->timestamps();
-            $table->foreign('pedido_id')->references('id')->on('pedidos');
+            $table->foreign('pedido_id')->references('id')->on('pedidos')->onDelete('CASCADE');
             $table->foreign('empresa_id')->references('id')->on('empresas');
             $table->foreign('produto_id')->references('id')->on('produtos');
         });

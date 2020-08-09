@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PedidoRequest;
+use App\Http\Resources\PedidoCollection;
 use App\Http\Resources\PedidoResource;
+use App\Model\Financeiro;
+use App\Model\FinanceiroItem;
 use App\Model\Pedido;
 use App\Model\PedidoItem;
 use App\Model\Produto;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpParser\Node\Stmt\TryCatch;
 
 class PedidoController extends Controller
 {
@@ -26,7 +30,7 @@ class PedidoController extends Controller
     public function index(Request $request)
     {
         $order = null;
-        $direct = 'desc';
+        $direct = 'asc';
         $pesquisa = null;
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
@@ -34,8 +38,10 @@ class PedidoController extends Controller
             if ($request->has('order')) $order = $request->query('order');
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
+            $direct = $direct === 'asc' ? 'desc' : 'asc';
             $resultado = $this->model->busca($pesquisa, $order, $direct, $request->user()->empresa_id);
-            return response()->json($resultado);
+            //return response()->json($resultado);
+            return PedidoCollection::collection($resultado);
         }
         else
         {
@@ -53,18 +59,17 @@ class PedidoController extends Controller
                 $usuario = $this->user->show( $request->user()->id );
                 $pedidoCreate->fill($request->all());
                 $pedidoCreate->devolucao = 0;
-                $pedidoCreate->dinheiro = 0;
-                $pedidoCreate->troco = 0;
-                $pedidoCreate->fiado = 0;
-                $pedidoCreate->cartaodebito = 0;
-                $pedidoCreate->cartaocredito = 0;
-                $pedidoCreate->boleto = 0;
                 $pedidoCreate->empresa_id = $usuario->empresa_id;
                 $pedidoCreate->user_id = $usuario->id;
                 if (!empty($request->pessoa))
                     $pedidoCreate->pessoa_id = (int) $request->pessoa['id'];
+                if (!empty($request->pagto_tp))
+                    $pedidoCreate->pagto_tp_id = (int) $request->pagto_tp['id'];
+                if ($pedidoCreate->tp_pagto === 'A')
+                    $pedidoCreate->parcelas = 0;
                 if ($pedidoCreate->save())
                 {
+                    ///// itens do pedido
                     $itensCreate = $request->get('pedido_item');
                     foreach ($itensCreate as $item) {
                         $idProd = (int) $item['produto']['id'];
@@ -74,6 +79,8 @@ class PedidoController extends Controller
                         $item['prcusto'] = $produto->prcusto;
                         $pedidoCreate->pedidoItem()->create($item);
                     }
+                    //// contas a receber
+                    $this->geraFinanceiro($pedidoCreate);
                     $this->user->log($request, $this->nomeprograma, 'INCLUIR', $pedidoCreate->id);
                     return $pedidoCreate->id;
                 }
@@ -85,36 +92,74 @@ class PedidoController extends Controller
         }
     }
 
-    /*public function store(PedidoRequest $request)
+    public function geraFinanceiro($pedido)
     {
+        if ($pedido->tp_pagto === 'A')
+        {
+            $receber = new Financeiro;
+            $receber->fill([
+                'pedido_id' => $pedido->id,
+                'pessoa_id' => $pedido->pessoa_id,
+                'empresa_id' => $pedido->empresa_id,
+                'pagto_tp_id' => $pedido->pagto_tp_id,
+                'tpfinanceiro' => 'R',
+                'parcela' => 0,
+                'vencimentodt' => $pedido->pedidodt,
+                'pagamentodt' => $pedido->pedidodt,
+                'quitadodt' => $pedido->pedidodt,
+                'valor' => $pedido->totpedido,
+                'valorpago' => $pedido->totpedido,
+                'obs' => 'VENDA À VISTA'
+            ]);
+            $receber->save();
+            $receber->financeiroItem()->create([
+                'user_id' => $pedido->user_id,
+                'pagto_tp_id' => $pedido->pagto_tp_id,
+                'pagamentodt' => $pedido->pedidodt,
+                'valorpago' => $pedido->totpedido,
+                'obs' => 'VENDA À VISTA'
+            ]);
+        }
+        else if ($pedido->tp_pagto === 'P')
+        {
+            for ($i=1; $i <= $pedido->parcelas; $i++) {
+                if ($i === $pedido->parcelas && $pedido->parcelas > 1) $valorParcela = ($pedido->totpedido - ($pedido->totpedido / $pedido->parcelas));
+                else $valorParcela = ($pedido->totpedido / $pedido->parcelas);
+                $vencimento = $this->vencimentoParcela($i, $pedido->pedidodt, $pedido->dias_pri, $pedido->dias_prox);
 
-                $pedidoCreate = new Pedido;
-                $usuario = $this->user->show( $request->user()->id );
-                $pedidoCreate->fill($request->all());
-                $pedidoCreate->devolucao = 0;
-                $pedidoCreate->dinheiro = 0;
-                $pedidoCreate->troco = 0;
-                $pedidoCreate->fiado = 0;
-                $pedidoCreate->cartaodebito = 0;
-                $pedidoCreate->cartaocredito = 0;
-                $pedidoCreate->boleto = 0;
-                $pedidoCreate->empresa_id = $usuario->empresa_id;
-                $pedidoCreate->user_id = $usuario->id;
-                if (!empty($request->pessoa))
-                    $pedidoCreate->pessoa_id = (int) $request->pessoa['id'];
+                $receber = new Financeiro;
+                $receber->fill([
+                    'pedido_id' => $pedido->id,
+                    'pessoa_id' => $pedido->pessoa_id,
+                    'empresa_id' => $pedido->empresa_id,
+                    'pagto_tp_id' => $pedido->pagto_tp_id,
+                    'parcela' => $i,
+                    'tpfinanceiro' => 'R',
+                    'vencimentodt'=> $vencimento,
+                    'valor' => $valorParcela,
+                    'valorpago' => 0,
+                    'obs' => 'VENDA À PRAZO'
+                ]);
+                $receber->save();
+            }
+        }
+    }
 
-                $itensCreate = $request->get('pedidoItem');
-                foreach ($itensCreate as $item) {
-                    $item['empresa_id'] = $usuario->empresa_id;
-                    $item['produto_id'] = $item['produto']['id'];
-                    dd($item);
-                    //
-
-                    //$pedidoCreate->pedidoItem()->create($item);
-                }
-
-    }*/
-
+    public function vencimentoParcela($parcela, $data, $dias_pri, $dias_prox = null)
+    {
+        if(empty($data)){
+            return null;
+        }
+        list($day, $month, $year) = explode('/', $data);
+        $datapadrao = (new \DateTime($year . '-' . $month . '-' . $day));
+        $datapadrao->modify('+'.$dias_pri.'days');
+        if ($parcela > 1 && $dias_prox)
+        {
+            $dias = $parcela === 2 ? $dias_prox : (($parcela-1)*$dias_prox);
+            $datapadrao->modify('+'.$dias.'days');
+        }
+        return $datapadrao->format('d/m/Y');
+    }
 
     public function show(Request $request, $id)
     {
@@ -151,26 +196,42 @@ class PedidoController extends Controller
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos && $direitos->btnalterar)
         {
-            $resultado = DB::transaction(function () use ($id, $request) {
-                $data  = $this->model->where('id',$id)->with('pedidoItem')->get()->first();
-                //$itens = $data->pedidoItem->toArray();
-                $data->fill($request->all());
-                if (!empty($request->pessoa)) $data->pessoa_id = (int) $request->pessoa['id'];
-                if ($data->save())
+            $existeBaixa = $this->existeFinanceiroBaixado($id);
+            if ($existeBaixa) return response()->json(['Financeiro já baixado'], 405);
+            else
+            {
+                $resultado = DB::transaction(function () use ($id, $request)
                 {
-                    $itensn = $request->get('pedido_item');
-                    foreach ($itensn as $item) {
-                        $itemUpdate = PedidoItem::where('id',$item['id'])->first();
-                        $itemUpdate->fill($item);
-                        if (!empty($item['produto'])) $itemUpdate->produto_id = (int) $item['produto']['id'];
-                        $itemUpdate->save();
-                    }
+                    $data  = $this->model->where('id',$id)->with('pedidoItem')->get()->first();
+                    $data->fill($request->all());
+                    if (!empty($request->pessoa)) $data->pessoa_id = (int) $request->pessoa['id'];
+                    if (!empty($request->pagto_tp)) $data->pagto_tp_id = (int) $request->pagto_tp['id'];
+                    if ($data->save())
+                    {
+                        $itensn = $request->get('pedido_item');
+                        foreach ($itensn as $item) {
+                            $itemUpdate = PedidoItem::where('id',$item['id'])->first();
+                            $itemUpdate->fill($item);
+                            if (!empty($item['produto'])) $itemUpdate->produto_id = (int) $item['produto']['id'];
+                            $itemUpdate->save();
+                        }
 
-                    $this->user->log($request, $this->nomeprograma, 'ALTERAR', $id);
-                    return $data;
-                }
-            });
-            return $resultado;
+                        $receber = Financeiro::where('pedido_id',$id)->first();
+                        if ($receber)
+                        {
+                            Financeiro::where('pedido_id',$id)
+                                        ->where('pessoa_id',$data->pessoa_id)
+                                        ->where('empresa_id',$data->empresa_id)
+                                        ->delete();
+                        }
+                        $this->geraFinanceiro($data);
+
+                        $this->user->log($request, $this->nomeprograma, 'ALTERAR', $id);
+                        return $data;
+                    }
+                });
+                return $resultado;
+            }
         } else
         {
             return response()->json(['sem permissão'], 403);
@@ -183,22 +244,52 @@ class PedidoController extends Controller
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos && $direitos->btnexcluir)
         {
-            $resultado = DB::transaction(function () use ($id, $request) {
-                $data = $this->model->where('id',$id)->first();
-                $data->cancelado = 'S';
-                $data->canceladodt = now();
-                if ($data->save())
+            $existeBaixa = $this->existeFinanceiroBaixado($id);
+            if ($existeBaixa) return response()->json(['Financeiro já baixado'], 405);
+            else
+            {
+                $resultado = DB::transaction(function () use ($id, $request)
                 {
-                    $this->user->log($request, $this->nomeprograma, 'CANCELADO', $id);
-                    return $data;
-                }
-            });
-            return $resultado;
+                    $data = $this->model->where('id',$id)->first();
+                    $data->cancelado = 'S';
+                    $data->canceladodt = now();
+                    if ($data->save())
+                    {
+                        Financeiro::where('pedido_id',$id)
+                                        ->where('pessoa_id',$data->pessoa_id)
+                                        ->where('empresa_id',$data->empresa_id)
+                                        ->delete();
+                        $this->user->log($request, $this->nomeprograma, 'CANCELADO', $id);
+                        return $data;
+                    }
+                });
+                return $resultado;
+            }
         }
         else
         {
             return response()->json(['sem permissão'], 403);
         }
+    }
+
+    public function existeFinanceiroBaixado($id)
+    {
+        $data = $this->model->where('id',$id)->first();
+        $existeBaixa = false;
+        if ($data->tp_pagto === 'P')
+        {
+            $titulos = Financeiro::where('pedido_id',$id)
+                                ->where('pessoa_id',$data->pessoa_id)
+                                ->where('empresa_id',$data->empresa_id)
+                                ->get();
+            if ($titulos)
+            {
+                foreach ($titulos as $titulo) {
+                    if ($titulo->valorpago > 0) $existeBaixa = true;
+                }
+            }
+        }
+        return $existeBaixa;
     }
 
     public function buscaCliente(Request $request)

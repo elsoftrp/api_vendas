@@ -8,6 +8,6 @@ class PagtoTp extends Model
 {
     protected $table = 'pagto_tp';
     protected $fillable = [
-        'despagto'
+        'despagtotp'
     ];
 }
