@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', 'LoginController@login')->name('login');
 
-
 Route::group(['middleware' => ['auth:sanctum']], function()
 {
     Route::get('/usuario', function (Request $request) {
@@ -42,6 +41,7 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::resource('empresas', 'EmpresaController');
     Route::post('empresas/seek','EmpresaController@seek');
 
+    Route::get('pessoastp/lista','PessoaTpController@lista');
     Route::resource('pessoastp', 'PessoaTpController');
     Route::post('pessoastp/seek','PessoaTpController@seek');
 
@@ -58,6 +58,9 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::resource('produtos', 'ProdutoController');
     Route::post('produtos/seek','ProdutoController@seek');
 
+    Route::get('pedidos/resumo','PedidoController@resumoVendas');
+    Route::get('pedidos/resumodiario','PedidoController@resumoDiario');
+    Route::get('pedidos/lista','PedidoController@listaVendas');
     Route::resource('pedidos', 'PedidoController');
     Route::get('pedidos/vendas/{id}','PedidoController@buscaVendas');
     Route::get('pedidos/vendaitens/{id}','PedidoController@buscaVendaProdutos');
@@ -69,13 +72,15 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::resource('planoconta', 'PlanoContaController');
     Route::post('planoconta/planopai','PlanoContaController@buscaPlano');
 
+    Route::get('financeiro/resumo','FinanceiroController@resumoFinanceiro');
     Route::resource('financeiro', 'FinanceiroController');
     Route::get('financeiro/pessoa/{id}','FinanceiroController@buscaFinanceiro');
     Route::post('financeiro/planoconta','FinanceiroController@buscaPlano');
     Route::delete('financeiro/estorno/{id}','FinanceiroController@estorno');
 
-    Route::resource('financeiroitem', 'FinanceiroItemController');
 
+
+    Route::resource('financeiroitem', 'FinanceiroItemController');
 
 
 });

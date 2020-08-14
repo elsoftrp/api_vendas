@@ -65,7 +65,7 @@ class EmpresaController extends Controller
                 if ($empresaCreate->save())
                 {
                     $this->user->log($request, $this->nomeprograma, 'INCLUIR', $empresaCreate->id);
-                    return $empresaCreate;
+                    return $empresaCreate->id;
                 }
             });
             return $resultado;

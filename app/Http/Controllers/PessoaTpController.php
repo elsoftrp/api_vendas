@@ -52,7 +52,7 @@ class PessoaTpController extends Controller
                 if ($pessoaTpCreate->save())
                 {
                     $this->user->log($request, $this->nomeprograma, 'INCLUIR', $pessoaTpCreate->id);
-                    return $pessoaTpCreate;
+                    return $pessoaTpCreate->id;
                 }
             });
             return $resultado;
@@ -124,6 +124,20 @@ class PessoaTpController extends Controller
             ->get();
             return $data;
         } else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
+    public function lista(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos)
+        {
+            $resultado = PessoaTp::select('id','descricao')->get();
+            return response()->json($resultado);
+        }
+        else
         {
             return response()->json(['sem permissão'], 403);
         }

@@ -32,7 +32,7 @@ class Pessoa extends Model
         'empresa_id'
     ];
 
-    public function busca($pesquisa = null, $order = null, $direct = 'asc', $idEmpresa = null)
+    public function busca($pesquisa = null, $order = null, $direct = 'asc', $idEmpresa = null, $pessoatp = null)
     {
 
         $orderBy = $this->fieldOrder($order);
@@ -47,15 +47,15 @@ class Pessoa extends Model
                 $query->where('pessoas.inativo',false);
             }
             if ($idEmpresa) $query->where('pessoas.empresa_id', $idEmpresa);
-        })//->leftJoin('cidades', 'cidades.id','=','pessoas.cidade_id')
-        //->leftJoin('pessoa_tp_pessoa','pessoa_tp_pessoa.pessoa_id','=','pessoas.id')
-        //->leftJoin('pessoa_tp','pessoa_tp.id','=','pessoa_tp_pessoa.pessoa_tp_id')
-        //->select('pessoas.id', 'pessoas.nome','pessoas.cnpjcpf','pessoas.email'
-        //        ,'pessoas.telefone','pessoas.celular','pessoas.inativo','cidades.cidade')
-        ->with('pessoaTp')
-        ->orderBy($orderBy, $direct)
-        ->paginate(10);
-        return $results;
+        });
+        if ($pessoatp)
+        {
+            $results = $results->whereHas('pessoaTp', function ($query) use ($pessoatp)
+            {
+                return $query->where('pessoa_tp_id', $pessoatp);
+            });
+        }
+        return $results->orderBy($orderBy, $direct)->paginate(10);
     }
 
     public function fieldOrder($value)

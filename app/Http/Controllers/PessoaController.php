@@ -27,15 +27,17 @@ class PessoaController extends Controller
         $order = null;
         $direct = 'asc';
         $pesquisa = null;
+        $pessoatp = null;
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
             if ($request->has('order')) $order = $request->query('order');
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
-            $resultado = $this->model->busca($pesquisa, $order, $direct, $request->user()->empresa_id);
+            if ($request->has('posicao')) $pessoatp = $request->query('posicao');
+            $resultado = $this->model->busca($pesquisa, $order, $direct, $request->user()->empresa_id, $pessoatp);
             return PessoaColletion::collection($resultado);
-            //return response()->json($resultado);
+            //return Debugbar::info($resultado);//response()->json($resultado);
         }
         else
         {

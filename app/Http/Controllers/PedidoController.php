@@ -6,14 +6,12 @@ use App\Http\Requests\PedidoRequest;
 use App\Http\Resources\PedidoCollection;
 use App\Http\Resources\PedidoResource;
 use App\Model\Financeiro;
-use App\Model\FinanceiroItem;
 use App\Model\Pedido;
 use App\Model\PedidoItem;
 use App\Model\Produto;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Stmt\TryCatch;
 
 class PedidoController extends Controller
 {
@@ -347,4 +345,101 @@ class PedidoController extends Controller
             return response()->json(['sem permissão'], 403);
         }
     }
+
+    public function resumoVendas(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos)
+        {
+            $usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $usuario->empresa_id;
+            $mes = now()->format('m');
+            $mes_anterior = now()->modify('- 1 month')->format('m');
+            $receitas_mes   = DB::table('pedidos')
+                                ->select(DB::raw('SUM(totpedido) as valor'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('cancelado')
+                                ->whereMonth('pedidodt','=', $mes)
+                                ->get();
+            $receitas_mes_ant = DB::table('pedidos')
+                                ->select(DB::raw('SUM(totpedido) as valor'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('cancelado')
+                                ->whereMonth('pedidodt','=', $mes_anterior)
+                                ->get();
+            $receitas_ano   = DB::table('pedidos')
+                                ->select(DB::raw('SUM(totpedido) as valor'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('cancelado')
+                                ->whereYear('pedidodt','=', now())
+                                ->get();
+            return response()->json(['mes_atual' => $receitas_mes, 'mes_anterior' => $receitas_mes_ant, 'ano_atual' => $receitas_ano]);
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
+    public function resumoDiario(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos)
+        {
+            $usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $usuario->empresa_id;
+            $mes = now()->format('m');
+            $ano = now()->format('Y');
+            if ($request->has('mes')) $mes = $request->query('mes');
+            $resultado   = DB::table('pedidos')
+                                ->select('pedidodt as dia',DB::raw('count(id) as qde, SUM(totpedido) as valor'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('cancelado')
+                                ->whereMonth('pedidodt','=', $mes)
+                                ->whereYear('pedidodt','=' ,$ano)
+                                ->groupBy('pedidodt')
+                                ->orderBy('pedidodt','desc')
+                                ->get();
+
+            return response()->json($resultado);
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
+    public function listaVendas(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos)
+        {
+            $usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $usuario->empresa_id;
+            $date = now();
+            if ($request->has('date')) $date = $this->convertStringToDate($request->query('date'));
+            $resultado   = Pedido::where('empresa_id',$id_empresa)
+                                    ->whereNull('cancelado')
+                                    ->where('pedidodt','=', $date)
+                                    ->get();
+
+            return PedidoCollection::collection($resultado);
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
+    private function convertStringToDate(?string $param)
+    {
+        if(empty($param)){
+            return null;
+        }
+
+        list($day, $month, $year) = explode('-', $param);
+        return (new \DateTime($year . '-' . $month . '-' . $day))->format('Y-m-d');
+    }
+
+
 }

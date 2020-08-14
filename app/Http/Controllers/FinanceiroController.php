@@ -257,8 +257,34 @@ class FinanceiroController extends Controller
         ->orWhere('classificacao','LIKE', $valorPesquisa.'%')
         ->limit(10)
         ->get();
-        return $resultado;
+        return response()->json($resultado);
     }
 
+    public function resumoFinanceiro(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos)
+        {
+            $usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $usuario->empresa_id;
+            $abertoVencidos = DB::table('financeiros')
+                                ->select('tpfinanceiro',DB::raw('SUM(valor-valorpago) as aberto_vencido'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('quitadodt')
+                                ->where('vencimentodt','<', now())
+                                ->groupBy('tpfinanceiro')->get();
+            $abertoVencer    = DB::table('financeiros')
+                                ->select('tpfinanceiro',DB::raw('SUM(valor-valorpago) as aberto_vencer'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('quitadodt')
+                                ->where('vencimentodt','>=', now())
+                                ->groupBy('tpfinanceiro')->get();
+            return response()->json(['vencidos' => $abertoVencidos, 'vencer' => $abertoVencer]);
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
 
 }

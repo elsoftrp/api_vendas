@@ -27,7 +27,8 @@ class FinanceiroRequest extends FormRequest
             'tpfinanceiro'  => 'required|in:R,P',
             'vencimentodt'  => 'required',
             'valor'  => 'required|numeric',
-            'pessoa'  => 'required',
+            'pessoa'  => 'required_if:tpfinanceiro,R',
+            'obs' => 'required_if:tpfinanceiro,P'
         ];
     }
 }

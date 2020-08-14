@@ -18,7 +18,7 @@ class FinanceiroResource extends JsonResource
             'id'=> $this->id,
             'empresa_id'=> $this->empresa_id,
             'pessoa_id'=> $this->pessoa_id,
-            'pessoa' => ['id' => $this->pessoa->id, 'nome' => $this->pessoa->nome ],
+            'pessoa' => new PessoaFinanceiroResource($this->pessoa),
             'pedido_id'=> $this->pedido_id,
             'tpfinanceiro'=> $this->tpfinanceiro,
             'parcela' => $this->parcela,

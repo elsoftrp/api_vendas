@@ -16,7 +16,7 @@ class CreateFinanceirosTable extends Migration
         Schema::create('financeiros', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('empresa_id');
-            $table->unsignedBigInteger('pessoa_id');
+            $table->unsignedBigInteger('pessoa_id')->nullable();
             $table->unsignedBigInteger('pagto_tp_id');
             $table->unsignedBigInteger('plano_conta_id')->nullable();
             $table->foreignId('pedido_id')->nullable()->constrained('pedidos');

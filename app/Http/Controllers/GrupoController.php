@@ -50,7 +50,7 @@ class GrupoController extends Controller
                 if ($dataCreate->save())
                 {
                     $this->user->log($request, $this->nomeprograma, 'INCLUIR', $dataCreate->id);
-                    return $dataCreate;
+                    return $dataCreate->id;
                 }
             });
             return $resultado;

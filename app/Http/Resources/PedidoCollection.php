@@ -18,7 +18,7 @@ class PedidoCollection extends JsonResource
             'id' => $this->id,
             'pedidodt' => $this->pedidodt,
             'pessoa_id' => $this->pessoa_id,
-            'pessoa' => ['id' => $this->pessoa->id, 'nome'=> $this->nome, 'cnpjcpf' => $this->pessoa->cnpjcpf] ,
+            'pessoa' => new PessoaFinanceiroResource($this->pessoa),
             'totpedido' => $this->totpedido
         ];
     }
