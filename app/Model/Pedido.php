@@ -80,6 +80,11 @@ class Pedido extends Model
         return $this->hasOne(PagtoTp::class, 'id','pagto_tp_id');
     }
 
+    public function empresa()
+    {
+        return $this->hasOne(Empresa::class, 'id','empresa_id');
+    }
+
     public function getCreatedAtAttribute($value)
     {
         if ($value)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EmpresaRequest;
+use App\Http\Resources\EmpresaResources;
 use App\Model\Categoria;
 use App\Model\Cidade;
 use App\Model\Contador;
@@ -37,19 +38,20 @@ class EmpresaController extends Controller
         $order = null;
         $direct = 'asc';
         $pesquisa = null;
-        $direitos = $this->user->permissao($request, $this->nomeprograma);
-        if ($direitos)
-        {
+        //$direitos = $this->user->permissao($request, $this->nomeprograma);
+        //if ($direitos)
+        //{
             if ($request->has('order')) $order = $request->query('order');
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
             $empresas = $this->model->busca($pesquisa, $order, $direct);
-            return response()->json($empresas);
-        }
-        else
-        {
-            return response()->json(['sem permissão'], 403);
-        }
+            //return response()->json($empresas);
+            return EmpresaResources::collection($empresas);
+        //}
+        //else
+        //{
+        //    return response()->json(['sem permissão'], 403);
+        //}
     }
 
     public function store(EmpresaRequest $request)

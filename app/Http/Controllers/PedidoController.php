@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PedidoRequest;
 use App\Http\Resources\PedidoCollection;
 use App\Http\Resources\PedidoResource;
+use App\Http\Resources\PessoaFinanceiroResource;
 use App\Model\Financeiro;
 use App\Model\Pedido;
 use App\Model\PedidoItem;
+use App\Model\Pessoa;
 use App\Model\Produto;
 use App\User;
 use Illuminate\Http\Request;
@@ -59,6 +61,8 @@ class PedidoController extends Controller
                 $pedidoCreate->devolucao = 0;
                 $pedidoCreate->empresa_id = $usuario->empresa_id;
                 $pedidoCreate->user_id = $usuario->id;
+                if (!empty($request->empresa))
+                    $pedidoCreate->empresa_id = (int) $request->empresa['id'];
                 if (!empty($request->pessoa))
                     $pedidoCreate->pessoa_id = (int) $request->pessoa['id'];
                 if (!empty($request->pagto_tp))
@@ -293,7 +297,8 @@ class PedidoController extends Controller
     public function buscaCliente(Request $request)
     {
         $valorPesquisa = $request->pesquisa;
-        $resultado = DB::table('pessoas')->select(DB::raw('id, nome, cnpjcpf'))
+        $resultado = Pessoa::select('id','nome','cnpjcpf')
+        ->where('inativo',false)
         ->where('nome','LIKE', '%'.$valorPesquisa.'%')
         ->orWhere('cnpjcpf','LIKE', $valorPesquisa.'%')
         ->limit(10)

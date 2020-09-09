@@ -34,6 +34,7 @@ class PedidoResource extends JsonResource
             'updated_at' => $this->updated_at,
             'pagto_tp' => new PagtoTpResource($this->pagtoTp),//['id' => $this->pagtoTp->id, 'despagtotp' => $this->pagtoTp->despagtotp],
             'pessoa' => ['id' => $this->pessoa->id, 'nome' => $this->pessoa->nome, 'cnpjcpf' => $this->pessoa->cnpjcpf],
+            'empresa' => new EmpresaSimpleResources($this->empresa),
             'pedido_item' => PedidoItemResource::collection($this->pedidoItem),
         ];
     }

@@ -46,7 +46,7 @@ class Pessoa extends Model
             {
                 $query->where('pessoas.inativo',false);
             }
-            if ($idEmpresa) $query->where('pessoas.empresa_id', $idEmpresa);
+            //if ($idEmpresa) $query->where('pessoas.empresa_id', $idEmpresa);
         });
         if ($pessoatp)
         {

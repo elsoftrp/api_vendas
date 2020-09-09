@@ -40,8 +40,7 @@ class Empresa extends Model
             {
                 $query->where('inativo',false);
             }
-        })->leftJoin('cidades', 'cidades.id','=','empresas.cidade_id')
-        ->select('empresas.id', 'empresas.nome','empresas.cnpjcpf','empresas.email','empresas.telefone','empresas.celular','empresas.endereco','empresas.inativo','cidades.cidade')
+        })
         ->orderBy($orderBy, $direct)
         ->paginate(10);
         //->take(15)->get();
@@ -54,16 +53,9 @@ class Empresa extends Model
 
     }
 
-    public function categoria()
+    public function pedidos()
     {
-        return $this->hasOne(Categoria::class, 'codcategoria', 'codcategoria');
-
-    }
-
-    public function escritorio()
-    {
-        return $this->hasOne(Escritorio::class, 'codescritorio', 'codescritorio');
-
+        return $this->hasMany(Pedido::class, 'empresa_id','id');
     }
 
     public function fieldOrder($value)
