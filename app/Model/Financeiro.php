@@ -95,6 +95,11 @@ class Financeiro extends Model
         return $this->hasOne(PagtoTp::class, 'id','pagto_tp_id');
     }
 
+    public function empresa()
+    {
+        return $this->hasOne(Empresa::class, 'id','empresa_id');
+    }
+
     public function planoConta()
     {
         return $this->hasOne(PlanoConta::class, 'id','plano_conta_id');

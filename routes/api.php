@@ -58,7 +58,7 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::resource('produtos', 'ProdutoController');
     Route::post('produtos/seek','ProdutoController@seek');
 
-    Route::get('pedidos/resumo','PedidoController@resumoVendas');
+    Route::get('pedidos/resumo/{resumo}','PedidoController@resumoVendas');
     Route::get('pedidos/resumodiario','PedidoController@resumoDiario');
     Route::get('pedidos/lista','PedidoController@listaVendas');
     Route::resource('pedidos', 'PedidoController');
@@ -72,7 +72,7 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::resource('planoconta', 'PlanoContaController');
     Route::post('planoconta/planopai','PlanoContaController@buscaPlano');
 
-    Route::get('financeiro/resumo','FinanceiroController@resumoFinanceiro');
+    Route::get('financeiro/resumo/{resumo}','FinanceiroController@resumoFinanceiro');
     Route::resource('financeiro', 'FinanceiroController');
     Route::get('financeiro/pessoa/{id}','FinanceiroController@buscaFinanceiro');
     Route::post('financeiro/planoconta','FinanceiroController@buscaPlano');

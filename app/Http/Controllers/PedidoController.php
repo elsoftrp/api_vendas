@@ -32,14 +32,16 @@ class PedidoController extends Controller
         $order = null;
         $direct = 'asc';
         $pesquisa = null;
+        $empresa = $request->user()->empresa_id;
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
             if ($request->has('order')) $order = $request->query('order');
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
+            if ($request->has('emp')) $empresa = $request->query('emp');
             $direct = $direct === 'asc' ? 'desc' : 'asc';
-            $resultado = $this->model->busca($pesquisa, $order, $direct, $request->user()->empresa_id);
+            $resultado = $this->model->busca($pesquisa, $order, $direct, $empresa);
             //return response()->json($resultado);
             return PedidoCollection::collection($resultado);
         }
@@ -76,7 +78,7 @@ class PedidoController extends Controller
                     foreach ($itensCreate as $item) {
                         $idProd = (int) $item['produto']['id'];
                         $produto = Produto::where('id',$idProd)->first();
-                        $item['empresa_id'] = $usuario->empresa_id;
+                        $item['empresa_id'] = $pedidoCreate->empresa_id;
                         $item['produto_id'] = $produto->id;
                         $item['prcusto'] = $produto->prcusto;
                         $pedidoCreate->pedidoItem()->create($item);
@@ -205,7 +207,9 @@ class PedidoController extends Controller
                 $resultado = DB::transaction(function () use ($id, $request)
                 {
                     $data  = $this->model->where('id',$id)->with('pedidoItem')->get()->first();
+                    $empresa_old = $data->empresa_id;
                     $data->fill($request->all());
+                    if (!empty($request->empresa)) $data->empresa_id = (int) $request->empresa['id'];
                     if (!empty($request->pessoa)) $data->pessoa_id = (int) $request->pessoa['id'];
                     if (!empty($request->pagto_tp)) $data->pagto_tp_id = (int) $request->pagto_tp['id'];
                     if ($data->save())
@@ -218,12 +222,15 @@ class PedidoController extends Controller
                             $itemUpdate->save();
                         }
 
-                        $receber = Financeiro::where('pedido_id',$id)->first();
+                        $receber = Financeiro::where('pedido_id',$id)
+                                            ->where('pessoa_id',$data->pessoa_id)
+                                            ->where('empresa_id',$empresa_old)
+                                            ->first();
                         if ($receber)
                         {
                             Financeiro::where('pedido_id',$id)
                                         ->where('pessoa_id',$data->pessoa_id)
-                                        ->where('empresa_id',$data->empresa_id)
+                                        ->where('empresa_id',$empresa_old)
                                         ->delete();
                         }
                         $this->geraFinanceiro($data);
@@ -323,7 +330,8 @@ class PedidoController extends Controller
         {
             $data = $this->model->where('pessoa_id',$id)
                 ->whereNull('cancelado')
-                ->select('id','pedidodt','totpedido')
+                ->leftJoin('empresas', 'empresas.id','=','pedidos.empresa_id')
+                ->select('pedidos.id','pedidodt','totpedido','empresa_id','empresas.nome')
                 ->orderBy('pedidodt','desc')
                 ->get();
             return response()->json($data);
@@ -351,13 +359,13 @@ class PedidoController extends Controller
         }
     }
 
-    public function resumoVendas(Request $request)
+    public function resumoVendas(Request $request, $id)
     {
         $direitos = $this->user->permissao($request, $this->nomeprograma);
-        if ($direitos)
+        if ($direitos && $direitos->btnchave1)
         {
-            $usuario = $this->user->show( $request->user()->id );
-            $id_empresa = $usuario->empresa_id;
+            //$usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $id;
             $mes = now()->format('m');
             $mes_anterior = now()->modify('- 1 month')->format('m');
             $receitas_mes   = DB::table('pedidos')
@@ -378,7 +386,7 @@ class PedidoController extends Controller
                                 ->whereNull('cancelado')
                                 ->whereYear('pedidodt','=', now())
                                 ->get();
-            return response()->json(['mes_atual' => $receitas_mes, 'mes_anterior' => $receitas_mes_ant, 'ano_atual' => $receitas_ano]);
+            return response()->json(['emp'=> $id, 'mes_atual' => $receitas_mes, 'mes_anterior' => $receitas_mes_ant, 'ano_atual' => $receitas_ano]);
         }
         else
         {
@@ -396,6 +404,7 @@ class PedidoController extends Controller
             $mes = now()->format('m');
             $ano = now()->format('Y');
             if ($request->has('mes')) $mes = $request->query('mes');
+            if ($request->has('emp')) $id_empresa = $request->query('emp');
             $resultado   = DB::table('pedidos')
                                 ->select('pedidodt as dia',DB::raw('count(id) as qde, SUM(totpedido) as valor'))
                                 ->where('empresa_id',$id_empresa)
@@ -423,6 +432,7 @@ class PedidoController extends Controller
             $id_empresa = $usuario->empresa_id;
             $date = now();
             if ($request->has('date')) $date = $this->convertStringToDate($request->query('date'));
+            if ($request->has('emp')) $id_empresa = $request->query('emp');
             $resultado   = Pedido::where('empresa_id',$id_empresa)
                                     ->whereNull('cancelado')
                                     ->where('pedidodt','=', $date)

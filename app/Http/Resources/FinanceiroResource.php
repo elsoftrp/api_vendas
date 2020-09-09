@@ -17,6 +17,7 @@ class FinanceiroResource extends JsonResource
         return [
             'id'=> $this->id,
             'empresa_id'=> $this->empresa_id,
+            'empresa' => new EmpresaSimpleResources($this->empresa),
             'pessoa_id'=> $this->pessoa_id,
             'pessoa' => new PessoaFinanceiroResource($this->pessoa),
             'pedido_id'=> $this->pedido_id,

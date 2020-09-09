@@ -44,7 +44,8 @@ class EmpresaController extends Controller
             if ($request->has('order')) $order = $request->query('order');
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
-            $empresas = $this->model->busca($pesquisa, $order, $direct);
+            if ($request->has('posicao')) $posicao = $request->query('posicao');
+            $empresas = $this->model->busca($pesquisa, $order, $direct );
             //return response()->json($empresas);
             return EmpresaResources::collection($empresas);
         //}
@@ -62,6 +63,7 @@ class EmpresaController extends Controller
             $resultado = DB::transaction(function() use ($request) {
                 $empresaCreate = new Empresa;
                 $empresaCreate->fill($request->all());
+                $empresaCreate->inativo = false;
                 if (!empty($request->cidade))
                     $empresaCreate->cidade_id = (int) $request->cidade['id'];
                 if ($empresaCreate->save())

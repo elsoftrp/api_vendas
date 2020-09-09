@@ -31,6 +31,7 @@ class FinanceiroController extends Controller
         $direct = 'asc';
         $pesquisa = null;
         $posicao = 'T';
+        $empresa = $request->user()->empresa_id;
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
@@ -38,8 +39,9 @@ class FinanceiroController extends Controller
             if ($request->has('dir'))  $direct = $request->query('dir');
             if ($request->has('pesquisa'))  $pesquisa = $request->query('pesquisa');
             if ($request->has('posicao')) $posicao = $request->query('posicao');
+            if ($request->has('emp')) $empresa = $request->query('emp');
             //$direct = $direct === 'asc' ? 'desc' : 'asc';
-            $resultado = $this->model->busca($pesquisa, $order, $direct, $request->user()->empresa_id, $posicao);
+            $resultado = $this->model->busca($pesquisa, $order, $direct, $empresa, $posicao);
             //return response()->json($resultado);
             return FinanceiroCollection::collection($resultado);
         }
@@ -60,6 +62,8 @@ class FinanceiroController extends Controller
                 $usuario = $this->user->show( $request->user()->id );
                 $dataCreate->fill($request->all());
                 $dataCreate->empresa_id = $usuario->empresa_id;
+                if (!empty($request->empresa))
+                    $dataCreate->empresa_id = (int) $request->empresa['id'];
                 if (!empty($request->pessoa))
                     $dataCreate->pessoa_id = (int) $request->pessoa['id'];
                 if (!empty($request->pedido))
@@ -124,6 +128,8 @@ class FinanceiroController extends Controller
                     $data = Financeiro::where('id',$id)->first();
                     $data->fill($request->all());
                     $data->pedido_id = $request->has('pedido') ? (int) $request->pedido['id'] : null;
+                    if (!empty($request->empresa))
+                        $data->empresa_id = (int) $request->empresa['id'];
                     if (!empty($request->pessoa))
                         $data->pessoa_id = (int) $request->pessoa['id'];
                     if (!empty($request->pagto_tp))
@@ -260,13 +266,13 @@ class FinanceiroController extends Controller
         return response()->json($resultado);
     }
 
-    public function resumoFinanceiro(Request $request)
+    public function resumoFinanceiro(Request $request, $id)
     {
         $direitos = $this->user->permissao($request, $this->nomeprograma);
         if ($direitos)
         {
-            $usuario = $this->user->show( $request->user()->id );
-            $id_empresa = $usuario->empresa_id;
+            //$usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $id;//$usuario->empresa_id;
             $abertoVencidos = DB::table('financeiros')
                                 ->select('tpfinanceiro',DB::raw('SUM(valor-valorpago) as aberto_vencido'))
                                 ->where('empresa_id',$id_empresa)
