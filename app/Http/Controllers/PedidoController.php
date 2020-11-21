@@ -366,19 +366,22 @@ class PedidoController extends Controller
         {
             //$usuario = $this->user->show( $request->user()->id );
             $id_empresa = $id;
-            $mes = now()->format('m');
+            $mes = now()->format('m');  /// revisar o filtro , problema no ano
+            $ano = now()->format('Y');
             $mes_anterior = now()->modify('- 1 month')->format('m');
             $receitas_mes   = DB::table('pedidos')
                                 ->select(DB::raw('SUM(totpedido) as valor'))
                                 ->where('empresa_id',$id_empresa)
                                 ->whereNull('cancelado')
                                 ->whereMonth('pedidodt','=', $mes)
+                                ->whereYear('pedidodt','=' ,$ano)
                                 ->get();
             $receitas_mes_ant = DB::table('pedidos')
                                 ->select(DB::raw('SUM(totpedido) as valor'))
                                 ->where('empresa_id',$id_empresa)
                                 ->whereNull('cancelado')
                                 ->whereMonth('pedidodt','=', $mes_anterior)
+                                ->whereYear('pedidodt','=' ,$ano)
                                 ->get();
             $receitas_ano   = DB::table('pedidos')
                                 ->select(DB::raw('SUM(totpedido) as valor'))
@@ -387,6 +390,39 @@ class PedidoController extends Controller
                                 ->whereYear('pedidodt','=', now())
                                 ->get();
             return response()->json(['emp'=> $id, 'mes_atual' => $receitas_mes, 'mes_anterior' => $receitas_mes_ant, 'ano_atual' => $receitas_ano]);
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+    }
+
+    public function resumoVendasPorMes(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos && $direitos->btnchave1)
+        {
+            $usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $usuario->empresa_id;
+            $mes = now()->format('m');
+            $ano = now()->format('Y');
+
+            if ($request->has('mes'))
+            {
+                $arr = explode('-', $request->query('mes'));
+                $mes = $arr[0];
+                $ano = $arr[1];
+            }
+            if ($request->has('emp')) $id_empresa = $request->query('emp');
+
+            $receitas_mes   = DB::table('pedidos')
+                                ->select(DB::raw('SUM(totpedido) as valor'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('cancelado')
+                                ->whereMonth('pedidodt','=', $mes)
+                                ->whereYear('pedidodt','=', $ano)
+                                ->first();
+            return response()->json(['emp'=> $id_empresa, 'mes' => $mes.'-'.$ano, 'valor' => $receitas_mes->valor]);
         }
         else
         {
@@ -403,8 +439,14 @@ class PedidoController extends Controller
             $id_empresa = $usuario->empresa_id;
             $mes = now()->format('m');
             $ano = now()->format('Y');
-            if ($request->has('mes')) $mes = $request->query('mes');
             if ($request->has('emp')) $id_empresa = $request->query('emp');
+            //if ($request->has('mes')) $mes = $request->query('mes');
+            if ($request->has('mes'))
+            {
+                $arr = explode('-', $request->query('mes'));
+                $mes = $arr[0];
+                $ano = $arr[1];
+            }
             $resultado   = DB::table('pedidos')
                                 ->select('pedidodt as dia',DB::raw('count(id) as qde, SUM(totpedido) as valor'))
                                 ->where('empresa_id',$id_empresa)
@@ -444,6 +486,53 @@ class PedidoController extends Controller
         {
             return response()->json(['sem permissão'], 403);
         }
+    }
+
+    public function resultadoAnual(Request $request)
+    {
+        $direitos = $this->user->permissao($request, $this->nomeprograma);
+        if ($direitos && $direitos->btnchave1)
+        {
+            $usuario = $this->user->show( $request->user()->id );
+            $id_empresa = $usuario->empresa_id;
+            $ano = now()->format('Y');
+
+
+            if ($request->has('ano')) $ano = $request->query('ano');
+            if ($request->has('emp')) $id_empresa = $request->query('emp');
+
+
+            $receita_ano   = DB::table('pedidos')
+                                ->select(DB::raw('year(pedidodt) as ano, SUM(totpedido) as valor'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('cancelado')
+                                ->whereYear('pedidodt','=',$ano)
+                                ->groupBy('ano')
+                                ->first();
+
+            $receita_meses   = DB::table('pedidos')
+                                ->select(DB::raw('month(pedidodt) as mes,  SUM(totpedido) as valor'))
+                                ->where('empresa_id',$id_empresa)
+                                ->whereNull('cancelado')
+                                ->whereYear('pedidodt','=', $ano)
+                                ->groupBy('mes')
+                                ->get();
+            if ($receita_ano)
+            {
+                return response()->json(['ano' => $receita_ano->ano, 'total' => $receita_ano->valor, 'meses' => $receita_meses]);
+            }
+            else
+            {
+                return response()->json(['ano' => $ano, 'total' => 0, 'meses' => $receita_meses]);
+            }
+
+            //return response()->json(['ano' => $receita_ano->ano, 'total' => $receita_ano->valor, 'meses' => $receita_meses]);
+        }
+        else
+        {
+            return response()->json(['sem permissão'], 403);
+        }
+
     }
 
     private function convertStringToDate(?string $param)

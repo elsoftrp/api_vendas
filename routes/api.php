@@ -59,6 +59,8 @@ Route::group(['middleware' => ['auth:sanctum']], function()
     Route::post('produtos/seek','ProdutoController@seek');
 
     Route::get('pedidos/resumo/{resumo}','PedidoController@resumoVendas');
+    Route::get('pedidos/resumopormes','PedidoController@resumoVendasPorMes');
+    Route::get('pedidos/resultadoano','PedidoController@resultadoAnual');
     Route::get('pedidos/resumodiario','PedidoController@resumoDiario');
     Route::get('pedidos/lista','PedidoController@listaVendas');
     Route::resource('pedidos', 'PedidoController');
